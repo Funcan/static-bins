@@ -1,6 +1,6 @@
 include versions.env
 
-TOOLS := strace lsof zsh
+TOOLS := strace lsof zsh bash
 
 .PHONY: all
 all: $(TOOLS)
@@ -54,6 +54,11 @@ lsof: toolchain
 zsh: toolchain
 	mkdir -p out
 	$(RUN_TOOLCHAIN) sh /src/tools/zsh/build.sh $(ZSH_VERSION) $(NCURSES_VERSION) $(ARCHES)
+
+.PHONY: bash
+bash: toolchain
+	mkdir -p out
+	$(RUN_TOOLCHAIN) sh /src/tools/bash/build.sh $(BASH_VERSION) $(BASH_PATCHLEVEL) $(NCURSES_VERSION) $(ARCHES)
 
 .PHONY: clean
 clean:

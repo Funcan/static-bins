@@ -11,6 +11,7 @@ Currently built tools:
 | [strace](https://strace.io/)        | https://github.com/strace/strace    |
 | [lsof](https://lsof.readthedocs.io/) | https://github.com/lsof-org/lsof   |
 | [zsh](https://www.zsh.org/)         | https://github.com/zsh-users/zsh    |
+| [bash](https://www.gnu.org/software/bash/) | https://git.savannah.gnu.org/cgit/bash.git |
 
 More can be added alongside them (see [Adding a tool](#adding-a-tool)).
 
@@ -116,6 +117,10 @@ The exception is lsof, whose releases aren't signed: its tarball is pinned by
 `LSOF_VERSION`. Check the new checksum against an independent source where
 possible, e.g. a distribution's package of the same release.
 
+Renovate also can't bump `BASH_PATCHLEVEL`, the number of official bash fix
+patches applied. Raise it by hand when new patches come out, and reset it to 0
+when `BASH_VERSION` changes.
+
 [MAINTENANCE.md](MAINTENANCE.md) lists everything that needs checking by hand,
 periodically and on version bumps.
 
@@ -174,3 +179,14 @@ periodically and on version bumps.
 
   zsh doesn't normally expand `~` in its built-in function path;
   `tools/zsh/patches/zsh-fpath-home.patch` makes it do so.
+
+### bash
+
+- Includes upstream's official fix patches (`bash53-001` and on), each
+  verified against its own signature. How many are applied is set by
+  `BASH_PATCHLEVEL` in `versions.env`, which is updated by hand.
+- Statically linked against ncurses, built the same way as for zsh, with the
+  same built-in terminal descriptions; bash's bundled termcap library only reads
+  `/etc/termcap`, which most systems lack.
+- Built without bash's own malloc (not recommended with musl) and without
+  translated messages.
