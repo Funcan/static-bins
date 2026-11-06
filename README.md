@@ -10,6 +10,7 @@ Currently built tools:
 |-------------------------------------|-------------------------------------|
 | [strace](https://strace.io/)        | https://github.com/strace/strace    |
 | [lsof](https://lsof.readthedocs.io/) | https://github.com/lsof-org/lsof   |
+| [zsh](https://www.zsh.org/)         | https://github.com/zsh-users/zsh    |
 
 More can be added alongside them (see [Adding a tool](#adding-a-tool)).
 
@@ -93,8 +94,10 @@ versions.env            Pinned versions of everything: base image, toolchain, to
 Makefile                Entry point: `make` (everything), `make toolchain`, `make <tool>`
 toolchain/Dockerfile    musl cross toolchains for every target
 tools/<tool>/build.sh   How to fetch, verify and build one tool (runs in the toolchain image)
+tools/<tool>/patches/   Local patches to a tool or its dependencies, if any
 keys/<tool>.gpg         Upstream release signing keys used to verify source downloads
 out/                    Built binaries (not committed)
+MAINTENANCE.md          Manual checks needed periodically and on version bumps
 ```
 
 ## Updating versions
@@ -112,6 +115,9 @@ The exception is lsof, whose releases aren't signed: its tarball is pinned by
 `LSOF_SHA256` in `versions.env`, which must be updated by hand alongside
 `LSOF_VERSION`. Check the new checksum against an independent source where
 possible, e.g. a distribution's package of the same release.
+
+[MAINTENANCE.md](MAINTENANCE.md) lists everything that needs checking by hand,
+periodically and on version bumps.
 
 ## Adding a tool
 
@@ -142,3 +148,29 @@ possible, e.g. a distribution's package of the same release.
 - RPC (libtirpc) and SELinux support are disabled, to avoid extra library
   dependencies. Without libtirpc, lsof can't report portmapper registrations
   (`+M`).
+
+### zsh
+
+- Statically linked against [ncurses](https://invisible-island.net/ncurses/),
+  which is built as part of the zsh build (and downloaded from GNU's mirror, as
+  invisible-island.net rate-limits downloads).
+- Some terminal descriptions are built in, so the line editor works on systems
+  with no terminfo database: `xterm`, `xterm-256color`, `xterm-kitty`, `screen`,
+  `screen-256color`, `tmux`, `tmux-256color`, `linux`, `vt100`, `vt220` and
+  `dumb`. A system terminfo database, where there is one, is still used first.
+- zsh can't load modules from separate files, so every module is built into the
+  binary instead, except `zsh/example` (a demo) and `zsh/newuser` (the first-run
+  wizard, which looks for its script at a fixed path). `zsh/db/gdbm`, `zsh/pcre`
+  and `zsh/attr` aren't available, and `zsh/cap` is built without libcap, so
+  it can't do anything useful.
+- zsh's function files (completion, prompt themes, `vcs_info` and so on) are
+  shipped separately, as `out/zsh-functions.tar.gz`, the same for every arch.
+  The binary looks for them in `~/share/zsh/<version>/functions` and for your
+  own in `~/share/zsh/site-functions`, so install them with:
+
+  ```sh
+  tar -xzf zsh-functions.tar.gz -C ~
+  ```
+
+  zsh doesn't normally expand `~` in its built-in function path;
+  `tools/zsh/patches/zsh-fpath-home.patch` makes it do so.

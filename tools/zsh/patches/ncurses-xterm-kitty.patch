@@ -1,0 +1,11 @@
+--- a/misc/terminfo.src
++++ b/misc/terminfo.src
+@@ -7948,7 +7948,7 @@
+ #*	ka1, ka3, kc1, kc3 were bogus (removed)
+ #*	meta sends escape (removed kmm) -TD
+ #*	cvvis does not make cursor "more visible" -TD
+-kitty|KovId's TTY,
++kitty|xterm-kitty|KovId's TTY,
+ 	use=xterm+256color, use=kitty+common,
+ kitty-direct|KovId's TTY using direct colors,
+ 	oc=\E]104\007, use=xterm+direct2, use=kitty+common,

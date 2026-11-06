@@ -54,7 +54,7 @@ RUN make -j"$(nproc)" TARGET=arm-linux-musleabi GCC_CONFIG="--with-arch=armv4t -
 FROM ${DEBIAN_IMAGE}
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      make ca-certificates curl xz-utils bzip2 file gpgv gcc libc6-dev gawk \
+      make ca-certificates curl xz-utils bzip2 file gpgv gcc libc6-dev gawk patch \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=x86_64  /opt/cross /opt/cross
 COPY --from=i686    /opt/cross /opt/cross
