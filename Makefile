@@ -1,6 +1,6 @@
 include versions.env
 
-TOOLS := strace
+TOOLS := strace lsof
 
 .PHONY: all
 all: $(TOOLS)
@@ -44,6 +44,11 @@ RUN_TOOLCHAIN = docker run --rm --user $$(id -u):$$(id -g) $(EXTRA_CA_MOUNT) \
 strace: toolchain
 	mkdir -p out
 	$(RUN_TOOLCHAIN) sh /src/tools/strace/build.sh $(STRACE_VERSION) $(ARCHES)
+
+.PHONY: lsof
+lsof: toolchain
+	mkdir -p out
+	$(RUN_TOOLCHAIN) sh /src/tools/lsof/build.sh $(LSOF_VERSION) $(LSOF_SHA256) $(ARCHES)
 
 .PHONY: clean
 clean:

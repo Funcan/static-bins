@@ -9,9 +9,9 @@ Currently built tools:
 | Tool                                | Upstream                            |
 |-------------------------------------|-------------------------------------|
 | [strace](https://strace.io/)        | https://github.com/strace/strace    |
+| [lsof](https://lsof.readthedocs.io/) | https://github.com/lsof-org/lsof   |
 
-strace is the first tool; the repo is structured so more can be added alongside
-it (see [Adding a tool](#adding-a-tool)).
+More can be added alongside them (see [Adding a tool](#adding-a-tool)).
 
 ## Targets
 
@@ -108,12 +108,18 @@ using the keys in `keys/`, so version bumps don't need checksum updates. If
 upstream changes its signing key, the build will fail until the new key is
 verified and committed.
 
+The exception is lsof, whose releases aren't signed: its tarball is pinned by
+`LSOF_SHA256` in `versions.env`, which must be updated by hand alongside
+`LSOF_VERSION`. Check the new checksum against an independent source where
+possible, e.g. a distribution's package of the same release.
+
 ## Adding a tool
 
 1. Add the tool's version to `versions.env`, with a `# renovate:` comment.
 2. Add the upstream signing key as `keys/<tool>.gpg` (binary format; `gpgv`
    can't read ASCII-armored keys), having checked it against an independent
-   source.
+   source. If upstream doesn't sign releases, pin a SHA-256 of the tarball in
+   `versions.env` instead, as for lsof.
 3. Write `tools/<tool>/build.sh`. It runs inside the toolchain image with the
    repo mounted read-only at `/src`, receives the version and the list of arch
    names, and must write `/out/<tool>-<arch>`. Use `tools/strace/build.sh` as a
@@ -130,3 +136,9 @@ verified and committed.
   structures. It still traces them.
 - Stack tracing (`-k`) and SELinux context support are disabled, to avoid extra
   library dependencies.
+
+### lsof
+
+- RPC (libtirpc) and SELinux support are disabled, to avoid extra library
+  dependencies. Without libtirpc, lsof can't report portmapper registrations
+  (`+M`).
