@@ -12,6 +12,7 @@ Currently built tools:
 | [lsof](https://lsof.readthedocs.io/) | https://github.com/lsof-org/lsof   |
 | [zsh](https://www.zsh.org/)         | https://github.com/zsh-users/zsh    |
 | [bash](https://www.gnu.org/software/bash/) | https://git.savannah.gnu.org/cgit/bash.git |
+| [socat](http://www.dest-unreach.org/socat/) | https://repo.or.cz/socat.git |
 
 More can be added alongside them (see [Adding a tool](#adding-a-tool)).
 
@@ -112,10 +113,11 @@ using the keys in `keys/`, so version bumps don't need checksum updates. If
 upstream changes its signing key, the build will fail until the new key is
 verified and committed.
 
-The exception is lsof, whose releases aren't signed: its tarball is pinned by
-`LSOF_SHA256` in `versions.env`, which must be updated by hand alongside
-`LSOF_VERSION`. Check the new checksum against an independent source where
-possible, e.g. a distribution's package of the same release.
+The exceptions are lsof and socat, whose releases aren't signed: their tarballs
+are pinned by `LSOF_SHA256` and `SOCAT_SHA256` in `versions.env`, which must be
+updated by hand alongside `LSOF_VERSION` and `SOCAT_VERSION`. Check a new
+checksum against an independent source where possible, e.g. a distribution's
+package of the same release.
 
 Renovate also can't bump `BASH_PATCHLEVEL`, the number of official bash fix
 patches applied. Raise it by hand when new patches come out, and reset it to 0
@@ -190,3 +192,15 @@ periodically and on version bumps.
   `/etc/termcap`, which most systems lack.
 - Built without bash's own malloc (not recommended with musl) and without
   translated messages.
+
+### socat
+
+- Statically linked against OpenSSL, from the 3.5 long-term support branch,
+  for the `OPENSSL-*` (TLS) addresses. OpenSSL looks for its config and CA
+  certificates under `/etc/ssl`, as on Debian and Alpine; on other systems pass
+  `cafile=` or `capath=`.
+- Downloaded over plain HTTP, as upstream's HTTPS certificate is for another
+  site; the checksum pin covers this.
+- Built without readline, so the `READLINE` address isn't available.
+- On arm, the whole of libatomic is linked in, as OpenSSL needs 64-bit atomics
+  that armv4t lacks.
