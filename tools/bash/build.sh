@@ -2,7 +2,7 @@
 # Builds static bash binaries, statically linked against ncurses. Runs inside the
 # toolchain image.
 # Usage: build.sh <bash version> <patch level> <ncurses version> <arch>...
-# Writes /out/bash-<arch>.
+# Writes /out/bash-<arch>, and a tarball of the sources used to /out/src.
 set -eu
 
 bash_version=${1#bash-}
@@ -31,6 +31,13 @@ gpgv --keyring /src/keys/bash.gpg bash.tar.gz.sig bash.tar.gz
 curl -fsSL -o ncurses.tar.gz "$ncurses_url"
 curl -fsSL -o ncurses.tar.gz.sig "$ncurses_url.sig"
 gpgv --keyring /src/keys/ncurses.gpg ncurses.tar.gz.sig ncurses.tar.gz
+# The exact sources used are published with each release.
+src=bash-$bash_version.$patchlevel-src
+mkdir "$src"
+cp bash.tar.gz "$src/bash-$bash_version.tar.gz"
+cp bash.tar.gz.sig "$src/bash-$bash_version.tar.gz.sig"
+cp ncurses.tar.gz "$src/ncurses-$ncurses_version.tar.gz"
+cp ncurses.tar.gz.sig "$src/ncurses-$ncurses_version.tar.gz.sig"
 tar -xf bash.tar.gz
 tar -xf ncurses.tar.gz
 # Embedded build dates come from the newest file in the tool's source, so
@@ -43,9 +50,15 @@ while [ "$i" -le "$patchlevel" ]; do
   curl -fsSL -o bash.patch "$p"
   curl -fsSL -o bash.patch.sig "$p.sig"
   gpgv --keyring /src/keys/bash.gpg bash.patch.sig bash.patch
+  cp bash.patch "$src/${p##*/}"
+  cp bash.patch.sig "$src/${p##*/}.sig"
   (cd "bash-$bash_version" && patch -p0 < ../bash.patch)
   i=$((i + 1))
 done
+# One tarball of the unchanged upstream files, so they can still be checked.
+mkdir -p /out/src
+tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner \
+  -cf "/out/src/$src.tar" "$src"
 (cd "ncurses-$ncurses_version" && patch -p1 < /src/tools/bash/patches/ncurses-xterm-kitty.patch)
 
 # Compiling the fallbacks in needs tic and infocmp that run on the build machine,

@@ -2,7 +2,8 @@
 # Builds static zsh binaries, statically linked against ncurses, plus one
 # arch-independent tarball of zsh's function files. Runs inside the toolchain image.
 # Usage: build.sh <zsh version> <ncurses version> <arch>...
-# Writes /out/zsh-<arch> and /out/zsh-functions.tar.gz.
+# Writes /out/zsh-<arch> and /out/zsh-functions.tar.gz, and a tarball of the
+# sources used to /out/src.
 set -eu
 
 zsh_version=${1#zsh-}
@@ -28,12 +29,23 @@ gpgv --keyring /src/keys/zsh.gpg zsh.tar.xz.asc zsh.tar.xz
 curl -fsSL -o ncurses.tar.gz "$ncurses_url"
 curl -fsSL -o ncurses.tar.gz.sig "$ncurses_url.sig"
 gpgv --keyring /src/keys/ncurses.gpg ncurses.tar.gz.sig ncurses.tar.gz
+# The exact sources used are published with each release.
+src=zsh-$zsh_version-src
+mkdir "$src"
+cp zsh.tar.xz "$src/zsh-$zsh_version.tar.xz"
+cp zsh.tar.xz.asc "$src/zsh-$zsh_version.tar.xz.asc"
+cp ncurses.tar.gz "$src/ncurses-$ncurses_version.tar.gz"
+cp ncurses.tar.gz.sig "$src/ncurses-$ncurses_version.tar.gz.sig"
 tar -xf zsh.tar.xz
 tar -xf ncurses.tar.gz
 # Embedded build dates come from the newest file in the tool's source, so
 # rebuilding the same version gives an identical binary.
 SOURCE_DATE_EPOCH=$(find "zsh-$zsh_version" -type f -printf '%T@\n' | sort -n | tail -n 1 | cut -d. -f1)
 export SOURCE_DATE_EPOCH
+# One tarball of the unchanged upstream files, so they can still be checked.
+mkdir -p /out/src
+tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner \
+  -cf "/out/src/$src.tar" "$src"
 (cd "zsh-$zsh_version" && patch -p1 < /src/tools/zsh/patches/zsh-fpath-home.patch)
 # Without dynamic loading, configure leaves out any module that can only be
 # dynamically loaded. Marking them "either" builds them into the binary instead,

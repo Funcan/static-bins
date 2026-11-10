@@ -2,7 +2,7 @@
 # Builds static socat binaries, statically linked against OpenSSL. Runs inside
 # the toolchain image.
 # Usage: build.sh <socat version> <socat sha256> <openssl version> <arch>...
-# Writes /out/socat-<arch>.
+# Writes /out/socat-<arch>, and a tarball of the sources used to /out/src.
 set -eu
 
 socat_version=$1
@@ -23,12 +23,22 @@ echo "$socat_sha256  socat.tar.gz" | sha256sum -c -
 curl -fsSL -o openssl.tar.gz "$openssl_url"
 curl -fsSL -o openssl.tar.gz.asc "$openssl_url.asc"
 gpgv --keyring /src/keys/openssl.gpg openssl.tar.gz.asc openssl.tar.gz
+# The exact sources used are published with each release.
+src=socat-$socat_version-src
+mkdir "$src"
+cp socat.tar.gz "$src/socat-$socat_version.tar.gz"
+cp openssl.tar.gz "$src/openssl-$openssl_version.tar.gz"
+cp openssl.tar.gz.asc "$src/openssl-$openssl_version.tar.gz.asc"
 tar -xf socat.tar.gz
 tar -xf openssl.tar.gz
 # Embedded build dates come from the newest file in the tool's source, so
 # rebuilding the same version gives an identical binary.
 SOURCE_DATE_EPOCH=$(find "socat-$socat_version" -type f -printf '%T@\n' | sort -n | tail -n 1 | cut -d. -f1)
 export SOURCE_DATE_EPOCH
+# One tarball of the unchanged upstream files, so they can still be checked.
+mkdir -p /out/src
+tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner \
+  -cf "/out/src/$src.tar" "$src"
 
 for arch in "$@"; do
   case "$arch" in

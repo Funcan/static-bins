@@ -2,7 +2,7 @@
 # Builds static jq binaries, statically linked against oniguruma for regex
 # support. Runs inside the toolchain image.
 # Usage: build.sh <jq version> <jq sha256> <oniguruma version> <oniguruma sha256> <arch>...
-# Writes /out/jq-<arch>.
+# Writes /out/jq-<arch>, and a tarball of the sources used to /out/src.
 set -eu
 
 jq_version=${1#jq-}
@@ -22,12 +22,21 @@ curl -fsSL -o jq.tar.gz "$jq_url"
 echo "$jq_sha256  jq.tar.gz" | sha256sum -c -
 curl -fsSL -o onig.tar.gz "$onig_url"
 echo "$onig_sha256  onig.tar.gz" | sha256sum -c -
+# The exact sources used are published with each release.
+src=jq-$jq_version-src
+mkdir "$src"
+cp jq.tar.gz "$src/jq-$jq_version.tar.gz"
+cp onig.tar.gz "$src/onig-$onig_version.tar.gz"
 tar -xf jq.tar.gz
 tar -xf onig.tar.gz
 # Embedded build dates come from the newest file in the tool's source, so
 # rebuilding the same version gives an identical binary.
 SOURCE_DATE_EPOCH=$(find "jq-$jq_version" -type f -printf '%T@\n' | sort -n | tail -n 1 | cut -d. -f1)
 export SOURCE_DATE_EPOCH
+# One tarball of the unchanged upstream files, so they can still be checked.
+mkdir -p /out/src
+tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner \
+  -cf "/out/src/$src.tar" "$src"
 
 for arch in "$@"; do
   case "$arch" in
