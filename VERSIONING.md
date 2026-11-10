@@ -89,6 +89,21 @@ Releases are cut in two halves:
 Because builds are reproducible, anyone can check a release by building the
 same commit locally and comparing hashes.
 
+GitHub release files are a flat list with no directories, so binaries are
+named `<tool>-<arch>`, e.g. `jq-x86_64`, with no version in the name. The
+latest one is then always at a stable URL such as
+`https://github.com/Funcan/static-bins/releases/latest/download/jq-x86_64`.
+Files that aren't arch-specific, such as `zsh-functions.tar.gz`, keep their
+own names.
+
+Each release also has a tarball per architecture, `static-bins-<arch>.tar.gz`,
+holding every tool for that architecture under its plain name (`jq`, `bash`,
+...) along with the arch-independent files. The tarballs are built
+reproducibly, like the binaries.
+
+Each release's notes list every tool's full version, which tools changed since
+the previous release, and the exact dependency and toolchain versions used.
+
 Alongside the binaries, each release contains:
 
 - `SHA256SUMS`, covering every file in the release;
