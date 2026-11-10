@@ -1,6 +1,6 @@
 include versions.env
 
-TOOLS := strace lsof zsh bash socat
+TOOLS := strace lsof zsh bash socat jq
 
 .PHONY: all
 all: $(TOOLS)
@@ -64,6 +64,11 @@ bash: toolchain
 socat: toolchain
 	mkdir -p out
 	$(RUN_TOOLCHAIN) sh /src/tools/socat/build.sh $(SOCAT_VERSION) $(SOCAT_SHA256) $(OPENSSL_VERSION) $(ARCHES)
+
+.PHONY: jq
+jq: toolchain
+	mkdir -p out
+	$(RUN_TOOLCHAIN) sh /src/tools/jq/build.sh $(JQ_VERSION) $(JQ_SHA256) $(ONIGURUMA_VERSION) $(ONIGURUMA_SHA256) $(ARCHES)
 
 .PHONY: clean
 clean:

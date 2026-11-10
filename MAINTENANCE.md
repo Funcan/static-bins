@@ -23,6 +23,18 @@ socat's git repo (repo.or.cz) isn't reachable from the UK, so Renovate follows
 Alpine's socat package via Repology instead. That lags upstream; periodically
 check http://www.dest-unreach.org/socat/download/ for newer releases.
 
+## jq and oniguruma
+
+- jq releases aren't signed (and its git tags aren't either), so the tarball
+  is pinned by `JQ_SHA256`, updated by hand on a version bump. For 1.8.2 it
+  was checked against upstream's `sha256sum.txt` and Alpine's APKBUILD
+  (SHA-512).
+- oniguruma, which jq needs for its regex functions, is pinned the same way by
+  `ONIGURUMA_SHA256` (6.9.10 checked against Arch's PKGBUILD). Its upstream,
+  kkos/oniguruma, was archived in April 2025, so it isn't tracked by Renovate.
+  Periodically check whether jq or the distributions have moved to a
+  maintained fork, and for security fixes that might need patching in.
+
 ## OpenSSL
 
 - socat uses OpenSSL from the 3.5 long-term support branch, and Renovate's
