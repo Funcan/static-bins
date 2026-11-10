@@ -7,11 +7,17 @@ version=${1#v}
 shift
 url=https://github.com/strace/strace/releases/download/v$version/strace-$version.tar.xz
 
-cd "$(mktemp -d)"
+# A fixed path, as build paths can end up in the binary.
+mkdir /tmp/build
+cd /tmp/build
 curl -fsSL -o strace.tar.xz "$url"
 curl -fsSL -o strace.tar.xz.asc "$url.asc"
 gpgv --keyring /src/keys/strace.gpg strace.tar.xz.asc strace.tar.xz
 tar -xf strace.tar.xz
+# Embedded build dates come from the newest file in the tool's source, so
+# rebuilding the same version gives an identical binary.
+SOURCE_DATE_EPOCH=$(find "strace-$version" -type f -printf '%T@\n' | sort -n | tail -n 1 | cut -d. -f1)
+export SOURCE_DATE_EPOCH
 
 for arch in "$@"; do
   case "$arch" in

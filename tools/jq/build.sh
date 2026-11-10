@@ -14,7 +14,9 @@ shift 4
 jq_url=https://github.com/jqlang/jq/releases/download/jq-$jq_version/jq-$jq_version.tar.gz
 onig_url=https://github.com/kkos/oniguruma/releases/download/v$onig_version/onig-$onig_version.tar.gz
 
-cd "$(mktemp -d)"
+# A fixed path, as build paths can end up in the binary.
+mkdir /tmp/build
+cd /tmp/build
 top=$PWD
 curl -fsSL -o jq.tar.gz "$jq_url"
 echo "$jq_sha256  jq.tar.gz" | sha256sum -c -
@@ -22,6 +24,10 @@ curl -fsSL -o onig.tar.gz "$onig_url"
 echo "$onig_sha256  onig.tar.gz" | sha256sum -c -
 tar -xf jq.tar.gz
 tar -xf onig.tar.gz
+# Embedded build dates come from the newest file in the tool's source, so
+# rebuilding the same version gives an identical binary.
+SOURCE_DATE_EPOCH=$(find "jq-$jq_version" -type f -printf '%T@\n' | sort -n | tail -n 1 | cut -d. -f1)
+export SOURCE_DATE_EPOCH
 
 for arch in "$@"; do
   case "$arch" in

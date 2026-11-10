@@ -14,7 +14,9 @@ shift 3
 socat_url=http://www.dest-unreach.org/socat/download/socat-$socat_version.tar.gz
 openssl_url=https://github.com/openssl/openssl/releases/download/openssl-$openssl_version/openssl-$openssl_version.tar.gz
 
-cd "$(mktemp -d)"
+# A fixed path, as build paths can end up in the binary.
+mkdir /tmp/build
+cd /tmp/build
 top=$PWD
 curl -fsSL -o socat.tar.gz "$socat_url"
 echo "$socat_sha256  socat.tar.gz" | sha256sum -c -
@@ -23,6 +25,10 @@ curl -fsSL -o openssl.tar.gz.asc "$openssl_url.asc"
 gpgv --keyring /src/keys/openssl.gpg openssl.tar.gz.asc openssl.tar.gz
 tar -xf socat.tar.gz
 tar -xf openssl.tar.gz
+# Embedded build dates come from the newest file in the tool's source, so
+# rebuilding the same version gives an identical binary.
+SOURCE_DATE_EPOCH=$(find "socat-$socat_version" -type f -printf '%T@\n' | sort -n | tail -n 1 | cut -d. -f1)
+export SOURCE_DATE_EPOCH
 
 for arch in "$@"; do
   case "$arch" in

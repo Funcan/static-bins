@@ -21,7 +21,9 @@ fallbacks=xterm,xterm-256color,xterm-kitty,screen,screen-256color,tmux,tmux-256c
 # Where Debian, Red Hat and others put their terminfo databases.
 terminfo_dirs=/etc/terminfo:/lib/terminfo:/usr/share/terminfo:/usr/lib/terminfo
 
-cd "$(mktemp -d)"
+# A fixed path, as build paths can end up in the binary.
+mkdir /tmp/build
+cd /tmp/build
 top=$PWD
 curl -fsSL -o bash.tar.gz "$bash_url"
 curl -fsSL -o bash.tar.gz.sig "$bash_url.sig"
@@ -31,6 +33,10 @@ curl -fsSL -o ncurses.tar.gz.sig "$ncurses_url.sig"
 gpgv --keyring /src/keys/ncurses.gpg ncurses.tar.gz.sig ncurses.tar.gz
 tar -xf bash.tar.gz
 tar -xf ncurses.tar.gz
+# Embedded build dates come from the newest file in the tool's source, so
+# rebuilding the same version gives an identical binary.
+SOURCE_DATE_EPOCH=$(find "bash-$bash_version" -type f -printf '%T@\n' | sort -n | tail -n 1 | cut -d. -f1)
+export SOURCE_DATE_EPOCH
 i=1
 while [ "$i" -le "$patchlevel" ]; do
   p=$(printf '%s-%03d' "$patch_url" "$i")

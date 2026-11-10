@@ -18,7 +18,9 @@ fallbacks=xterm,xterm-256color,xterm-kitty,screen,screen-256color,tmux,tmux-256c
 # Where Debian, Red Hat and others put their terminfo databases.
 terminfo_dirs=/etc/terminfo:/lib/terminfo:/usr/share/terminfo:/usr/lib/terminfo
 
-cd "$(mktemp -d)"
+# A fixed path, as build paths can end up in the binary.
+mkdir /tmp/build
+cd /tmp/build
 top=$PWD
 curl -fsSL -o zsh.tar.xz "$zsh_url"
 curl -fsSL -o zsh.tar.xz.asc "$zsh_url.asc"
@@ -28,6 +30,10 @@ curl -fsSL -o ncurses.tar.gz.sig "$ncurses_url.sig"
 gpgv --keyring /src/keys/ncurses.gpg ncurses.tar.gz.sig ncurses.tar.gz
 tar -xf zsh.tar.xz
 tar -xf ncurses.tar.gz
+# Embedded build dates come from the newest file in the tool's source, so
+# rebuilding the same version gives an identical binary.
+SOURCE_DATE_EPOCH=$(find "zsh-$zsh_version" -type f -printf '%T@\n' | sort -n | tail -n 1 | cut -d. -f1)
+export SOURCE_DATE_EPOCH
 (cd "zsh-$zsh_version" && patch -p1 < /src/tools/zsh/patches/zsh-fpath-home.patch)
 # Without dynamic loading, configure leaves out any module that can only be
 # dynamically loaded. Marking them "either" builds them into the binary instead,
@@ -100,4 +106,8 @@ stage=$top/stage
 make -C "build-zsh-$arch" install.fns \
   fndir="$stage/share/zsh/$zsh_version/functions" \
   sitefndir="$stage/share/zsh/site-functions"
-tar -C "$stage" -czf /out/zsh-functions.tar.gz share
+# Fixed order, timestamps and owners, and no gzip timestamp, so the tarball is
+# reproducible.
+tar -C "$stage" --sort=name --mtime="@$SOURCE_DATE_EPOCH" \
+  --owner=0 --group=0 --numeric-owner -cf "$top/zsh-functions.tar" share
+gzip -9n -c "$top/zsh-functions.tar" > /out/zsh-functions.tar.gz
