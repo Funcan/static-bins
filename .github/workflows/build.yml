@@ -1,0 +1,25 @@
+name: Build
+
+# Builds every tool for every architecture, to catch breakage before a release.
+# Publishing is done separately, by the release workflow.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # CI=true is set by Actions, so the toolchain stages build in parallel.
+      - run: make toolchain
+      - run: make all
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: out
+          path: out/
+          if-no-files-found: error
